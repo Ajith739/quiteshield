@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<ruleset name="Gracewell QuietShield">
+  <description>WordPress Coding Standards for Gracewell backend PHP.</description>
+  <file>gracewell-quietshield.php</file>
+  <file>includes</file>
+  <file>uninstall.php</file>
+  <file>admin/views</file>
+  <arg name="extensions" value="php"/>
+  <rule ref="WordPress"/>
+  <rule ref="WordPress.WP.I18n">
+    <properties><property name="text_domain" type="array"><element value="gracewell-quietshield"/></property></properties>
+  </rule>
+</ruleset>

@@ -1,0 +1,696 @@
+/* ============================================================
+   Gracewell QuietShield — Login Protection Page Styles
+   Page-specific only. Shared components come from dashboard.css.
+   ============================================================ */
+
+#gracewell-quietshield-app {
+    --purple-50: #F3EEFE;
+    --purple-100: #E9DDFD;
+    --purple-500: #9D4EDD;
+    --purple-600: #7C3AED;
+}
+
+html[data-theme="dark"] #gracewell-quietshield-app {
+    --purple-50: #2A2166;
+    --purple-100: #3B2D86;
+    --purple-600: #C4B5FD;
+}
+
+#gracewell-quietshield-app .t-purple {
+    background: var(--purple-50);
+    color: var(--purple-600);
+}
+
+/* ---------- Stats row (5-up) ---------- */
+#gracewell-quietshield-app .lp-stats {
+    display: grid;
+    gap: var(--gap);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-bottom: var(--gap);
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+    #gracewell-quietshield-app .lp-stats {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+
+    #gracewell-quietshield-app .lp-stats>.stat:nth-child(1),
+    #gracewell-quietshield-app .lp-stats>.stat:nth-child(2),
+    #gracewell-quietshield-app .lp-stats>.stat:nth-child(3) {
+        grid-column: span 2;
+    }
+
+    #gracewell-quietshield-app .lp-stats>.stat:nth-child(4),
+    #gracewell-quietshield-app .lp-stats>.stat:nth-child(5) {
+        grid-column: span 3;
+    }
+}
+
+@media (min-width: 1200px) {
+    #gracewell-quietshield-app .lp-stats {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 480px) {
+    #gracewell-quietshield-app .lp-stats {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Protection-active card "off" state */
+#gracewell-quietshield-app .stat-main.off {
+    background: var(--surface-2);
+    border-color: var(--line-2);
+}
+
+#gracewell-quietshield-app .stat-main.off #protTile {
+    background: var(--surface-3);
+    color: var(--muted);
+}
+
+#gracewell-quietshield-app .stat-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 6px 0 4px;
+}
+
+#gracewell-quietshield-app .trend.bad {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 999px;
+    padding: 2px 7px;
+    line-height: 1;
+    white-space: nowrap;
+    background: var(--amber-50);
+    color: var(--amber-500);
+}
+
+#gracewell-quietshield-app .trend.bad .i {
+    width: 11px;
+    height: 11px;
+}
+
+/* ---------- Main grid ---------- */
+#gracewell-quietshield-app .lp-grid {
+    display: grid;
+    gap: var(--gap);
+    grid-template-columns: 1fr;
+}
+
+@media (min-width: 1024px) {
+    #gracewell-quietshield-app .lp-grid {
+        grid-template-columns: minmax(0, 1.15fr) minmax(0, 1.25fr);
+    }
+
+    #gracewell-quietshield-app .lp-grid>.a-locked,
+    #gracewell-quietshield-app .lp-grid>.a-errors {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (min-width: 1280px) {
+    #gracewell-quietshield-app .lp-grid {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr);
+    }
+
+    #gracewell-quietshield-app .lp-grid>.a-settings {
+        grid-column: 1;
+        grid-row: span 2;
+    }
+
+    #gracewell-quietshield-app .lp-grid>.a-activity {
+        grid-column: 2;
+    }
+
+    #gracewell-quietshield-app .lp-grid>.a-allow {
+        grid-column: 3;
+    }
+
+    #gracewell-quietshield-app .lp-grid>.a-locked {
+        grid-column: 2;
+    }
+
+    #gracewell-quietshield-app .lp-grid>.a-url {
+        grid-column: 3;
+    }
+
+    #gracewell-quietshield-app .lp-grid>.a-errors {
+        grid-column: 1 / -1;
+    }
+}
+
+/* ---------- Settings rows ---------- */
+#gracewell-quietshield-app .set-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line-2);
+}
+
+#gracewell-quietshield-app .set-row:last-child {
+    border-bottom: 0;
+}
+
+#gracewell-quietshield-app .set-row .txt {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    cursor: default;
+}
+
+#gracewell-quietshield-app .set-row .txt b {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+}
+
+#gracewell-quietshield-app .set-row .txt small {
+    font-size: 11.5px;
+    color: var(--muted);
+    line-height: 1.4;
+}
+
+#gracewell-quietshield-app .set-row .ctl {
+    flex: 0 0 140px;
+    display: flex;
+    justify-content: flex-end;
+    min-width: 0;
+}
+
+@media (max-width: 480px) {
+    #gracewell-quietshield-app .set-row.wrap-sm {
+        flex-wrap: wrap;
+    }
+
+    #gracewell-quietshield-app .set-row.wrap-sm .ctl {
+        flex: 0 0 100%;
+    }
+}
+
+/* ---------- Stepper ---------- */
+#gracewell-quietshield-app .stepper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    width: 100%;
+}
+
+#gracewell-quietshield-app .stepper input.field {
+    width: 100%;
+    height: 34px;
+    padding-right: 28px;
+    -moz-appearance: textfield;
+}
+
+#gracewell-quietshield-app .stepper input.field::-webkit-outer-spin-button,
+#gracewell-quietshield-app .stepper input.field::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+#gracewell-quietshield-app .stepper-btns {
+    position: absolute;
+    right: 2px;
+    top: 2px;
+    bottom: 2px;
+    width: 24px;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--line);
+}
+
+#gracewell-quietshield-app .stepper-btns button {
+    flex: 1;
+    border: 0;
+    background: none;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    color: var(--muted);
+}
+
+#gracewell-quietshield-app .stepper-btns button:hover {
+    background: var(--surface-3);
+    color: var(--ink);
+}
+
+#gracewell-quietshield-app .stepper-btns button .i {
+    width: 10px;
+    height: 10px;
+}
+
+#gracewell-quietshield-app .save-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+    flex-wrap: wrap;
+}
+
+/* ---------- Login activity chart legend ---------- */
+#gracewell-quietshield-app .chart-legend {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--ink-2);
+    margin: -2px 0 8px;
+    flex-wrap: wrap;
+}
+
+#gracewell-quietshield-app .chart-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+#gracewell-quietshield-app .c-green {
+    color: var(--green);
+}
+
+#gracewell-quietshield-app .c-red {
+    color: var(--red-500);
+}
+
+/* ---------- Locked IPs table ---------- */
+#gracewell-quietshield-app .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+}
+
+#gracewell-quietshield-app .table.tight {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+#gracewell-quietshield-app .table.tight th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    padding: 7px 8px;
+    border-bottom: 1px solid var(--line);
+}
+
+#gracewell-quietshield-app .table.tight td {
+    padding: 9px 8px;
+    border-bottom: 1px solid var(--line-2);
+    color: var(--ink-2);
+    white-space: nowrap;
+}
+
+#gracewell-quietshield-app .table.tight tr:last-child td {
+    border-bottom: 0;
+}
+
+#gracewell-quietshield-app .table.tight tbody tr:hover {
+    background: var(--surface-2);
+}
+
+#gracewell-quietshield-app .ip-cell {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink);
+}
+
+#gracewell-quietshield-app .remain {
+    color: var(--amber-500);
+    font-weight: 600;
+}
+
+#gracewell-quietshield-app .unlock {
+    height: 26px;
+    padding: 0 12px;
+    border-radius: 6px;
+    border: 1px solid var(--blue-100);
+    background: var(--blue-50);
+    color: var(--blue);
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .16s;
+}
+
+#gracewell-quietshield-app .unlock:hover {
+    background: var(--blue-100);
+}
+
+/* ---------- Allowlist ---------- */
+#gracewell-quietshield-app .chips {
+    list-style: none;
+    margin: 8px 0 12px;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+#gracewell-quietshield-app .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 8px 0 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--ink);
+}
+
+#gracewell-quietshield-app .chip .ok {
+    color: var(--green);
+    width: 14px;
+    height: 14px;
+    flex: none;
+}
+
+#gracewell-quietshield-app .chip button {
+    border: 0;
+    background: none;
+    color: var(--muted);
+    padding: 0 2px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+#gracewell-quietshield-app .chip button:hover {
+    color: var(--red);
+}
+
+#gracewell-quietshield-app .add-dash {
+    width: 100%;
+    height: 36px;
+    border: 1.5px dashed var(--field-line);
+    border-radius: var(--r-sm);
+    background: none;
+    color: var(--ink-2);
+    font-size: 12.5px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all .16s;
+}
+
+#gracewell-quietshield-app .add-dash:hover {
+    border-color: var(--blue);
+    color: var(--blue);
+    background: var(--blue-50);
+}
+
+#gracewell-quietshield-app .add-dash .i {
+    width: 14px;
+    height: 14px;
+}
+
+#gracewell-quietshield-app .add-form {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    padding-top: 10px;
+    flex-wrap: wrap;
+}
+
+#gracewell-quietshield-app .add-form .field {
+    flex: 1 1 180px;
+    height: 36px;
+}
+
+#gracewell-quietshield-app .add-form .btn {
+    height: 36px;
+}
+
+#gracewell-quietshield-app .err-text {
+    font-size: 11.5px;
+    color: var(--red);
+    margin: 6px 0 0;
+    display: none;
+}
+
+#gracewell-quietshield-app .err-text.show {
+    display: block;
+}
+
+/* ---------- Custom login URL ---------- */
+#gracewell-quietshield-app .url-input-block {
+    margin: 8px 0 12px;
+}
+
+#gracewell-quietshield-app .field-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 6px;
+}
+
+#gracewell-quietshield-app .input-group {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid var(--field-line);
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    height: 38px;
+    overflow: hidden;
+}
+
+#gracewell-quietshield-app .input-group:focus-within {
+    border-color: var(--blue);
+    box-shadow: var(--ring);
+}
+
+#gracewell-quietshield-app .input-group .pre {
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    background: var(--surface-2);
+    border-right: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 12px;
+    white-space: nowrap;
+    user-select: none;
+}
+
+#gracewell-quietshield-app .input-group input {
+    flex: 1;
+    border: 0;
+    background: none;
+    padding: 0 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    min-width: 0;
+}
+
+#gracewell-quietshield-app .input-group input:focus {
+    outline: none;
+}
+
+#gracewell-quietshield-app .copy-btn {
+    width: 36px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    background: none;
+    color: var(--blue);
+    cursor: pointer;
+}
+
+#gracewell-quietshield-app .copy-btn:hover {
+    background: var(--blue-50);
+}
+
+#gracewell-quietshield-app .copy-btn .i {
+    width: 15px;
+    height: 15px;
+}
+
+#gracewell-quietshield-app .url-actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+#gracewell-quietshield-app .note {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 10px 12px;
+    border-radius: var(--r-sm);
+    background: var(--blue-50);
+    font-size: 12px;
+    color: var(--ink-2);
+    line-height: 1.45;
+}
+
+#gracewell-quietshield-app .note .i {
+    width: 16px;
+    height: 16px;
+    color: var(--blue);
+    flex: none;
+    margin-top: 1px;
+}
+
+#gracewell-quietshield-app .note p {
+    margin: 0;
+}
+
+#gracewell-quietshield-app .code-inline {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: var(--surface-3);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    white-space: nowrap;
+}
+
+/* ---------- Generic login errors card ---------- */
+#gracewell-quietshield-app .err-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+#gracewell-quietshield-app .err-tile {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #6E8BFF, #4C63E6);
+    color: #fff;
+    display: grid;
+    place-items: center;
+    flex: none;
+}
+
+#gracewell-quietshield-app .err-tile .i {
+    width: 22px;
+    height: 22px;
+}
+
+#gracewell-quietshield-app .err-txt {
+    flex: 1 1 280px;
+    min-width: 0;
+}
+
+#gracewell-quietshield-app .err-txt h2 {
+    font-size: 15.5px;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 0 0 4px;
+}
+
+#gracewell-quietshield-app .err-txt p {
+    font-size: 12.5px;
+    color: var(--muted);
+    line-height: 1.5;
+    margin: 0;
+}
+
+#gracewell-quietshield-app .err-art {
+    position: relative;
+    flex: 0 0 260px;
+    height: 84px;
+    margin-left: auto;
+}
+
+#gracewell-quietshield-app .err-hills {
+    position: absolute;
+    inset: auto 0 0 0;
+    width: 100%;
+    height: 50px;
+}
+
+#gracewell-quietshield-app .browser {
+    position: absolute;
+    left: 14%;
+    bottom: 0;
+    width: 50%;
+    height: 70px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px 6px 0 0;
+    box-shadow: var(--shadow);
+}
+
+#gracewell-quietshield-app .bar-top {
+    display: flex;
+    gap: 3px;
+    padding: 4px 6px;
+    background: var(--surface-3);
+    border-bottom: 1px solid var(--line-2);
+    border-radius: 6px 6px 0 0;
+}
+
+#gracewell-quietshield-app .bar-top i {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--faint);
+}
+
+#gracewell-quietshield-app .browser-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding-top: 6px;
+}
+
+#gracewell-quietshield-app .lockico .i {
+    width: 16px;
+    height: 16px;
+    color: var(--blue);
+}
+
+#gracewell-quietshield-app .fake-input {
+    width: 70%;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--line);
+}
+
+#gracewell-quietshield-app .fake-input.short {
+    width: 45%;
+}
+
+#gracewell-quietshield-app .bubble {
+    position: absolute;
+    right: 0;
+    top: 10px;
+    background: var(--red-50);
+    color: var(--red);
+    border: 1px solid var(--red-100);
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+    #gracewell-quietshield-app .err-art {
+        display: none;
+    }
+}

@@ -1,0 +1,571 @@
+/* ============================================================
+   Gracewell QuietShield — Hardening Page Styles
+   Page-specific only. Shared components come from dashboard.css.
+   ============================================================ */
+
+#gracewell-quietshield-app {
+    --purple-50: #F3EEFE;
+    --purple-100: #E9DDFD;
+    --purple-500: #9D4EDD;
+    --purple-600: #7C3AED;
+}
+
+html[data-theme="dark"] #gracewell-quietshield-app {
+    --purple-50: #2A2166;
+    --purple-100: #3B2D86;
+    --purple-600: #C4B5FD;
+}
+
+#gracewell-quietshield-app .t-purple {
+    background: var(--purple-50);
+    color: var(--purple-600);
+}
+
+#gracewell-quietshield-app .t-navy {
+    background: var(--surface-3);
+    color: var(--ink);
+}
+
+/* ---------- Stat cards ---------- */
+#gracewell-quietshield-app .hd-stats {
+    display: grid;
+    gap: var(--gap);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-bottom: var(--gap);
+}
+
+@media (min-width: 1024px) {
+    #gracewell-quietshield-app .hd-stats {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 480px) {
+    #gracewell-quietshield-app .hd-stats {
+        grid-template-columns: 1fr;
+    }
+}
+
+#gracewell-quietshield-app .stat-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 2px 0;
+}
+
+#gracewell-quietshield-app .stat-row .stat-num {
+    margin: 0;
+}
+
+#gracewell-quietshield-app .trend {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 999px;
+    padding: 2px 7px;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+#gracewell-quietshield-app .trend.up {
+    background: var(--green-50);
+    color: var(--green);
+}
+
+#gracewell-quietshield-app .trend.down {
+    background: var(--red-50);
+    color: var(--red-500);
+}
+
+#gracewell-quietshield-app .trend .i {
+    width: 11px;
+    height: 11px;
+}
+
+#gracewell-quietshield-app .bar-row {
+    margin: 6px 0 2px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+#gracewell-quietshield-app .bar {
+    width: 100%;
+    height: 6px;
+    border-radius: 99px;
+    background: var(--track);
+    overflow: hidden;
+}
+
+#gracewell-quietshield-app .bar>span {
+    display: block;
+    height: 100%;
+    width: 0;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--teal-2), var(--blue));
+    transition: width .5s var(--ease);
+}
+
+#gracewell-quietshield-app .bar.green>span {
+    background: linear-gradient(90deg, #34D399, #10B981);
+}
+
+#gracewell-quietshield-app .bar.amber>span {
+    background: linear-gradient(90deg, var(--amber-500), #FDBA3C);
+}
+
+/* ---------- Main grid ---------- */
+#gracewell-quietshield-app .hd-grid {
+    display: grid;
+    gap: var(--gap);
+    grid-template-columns: 1fr;
+}
+
+@media (min-width: 1100px) {
+    #gracewell-quietshield-app .hd-grid {
+        grid-template-columns: 2.1fr 1fr;
+    }
+}
+
+#gracewell-quietshield-app .hd-main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap);
+    min-width: 0;
+}
+
+#gracewell-quietshield-app .hd-side {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap);
+    min-width: 0;
+}
+
+@media (min-width: 768px) and (max-width: 1099px) {
+    #gracewell-quietshield-app .hd-side {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        align-items: start;
+    }
+}
+
+#gracewell-quietshield-app .hd-sub {
+    display: grid;
+    gap: var(--gap);
+    grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+    #gracewell-quietshield-app .hd-sub {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* ---------- Checklist table ---------- */
+#gracewell-quietshield-app .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+}
+
+#gracewell-quietshield-app .check-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+}
+
+#gracewell-quietshield-app .check-table th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    padding: 7px 8px;
+    border-bottom: 1px solid var(--line);
+}
+
+#gracewell-quietshield-app .check-table td {
+    padding: 12px 8px;
+    border-bottom: 1px solid var(--line-2);
+    color: var(--ink-2);
+    vertical-align: middle;
+}
+
+#gracewell-quietshield-app .check-table tr:last-child td {
+    border-bottom: 0;
+}
+
+#gracewell-quietshield-app .check-table tbody tr {
+    transition: background .16s;
+}
+
+#gracewell-quietshield-app .check-table tbody tr:hover {
+    background: var(--surface-2);
+}
+
+#gracewell-quietshield-app .set-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    color: var(--ink);
+    white-space: nowrap;
+}
+
+#gracewell-quietshield-app .set-cell .tile {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+}
+
+#gracewell-quietshield-app .set-cell .tile .i {
+    width: 14px;
+    height: 14px;
+}
+
+#gracewell-quietshield-app .check-table .desc {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.4;
+    white-space: normal;
+}
+
+#gracewell-quietshield-app .pill.p-status {
+    font-size: 11px;
+    height: 22px;
+    padding: 0 9px;
+}
+
+#gracewell-quietshield-app .info-btn {
+    border: 0;
+    background: none;
+    padding: 2px;
+    color: var(--muted);
+    border-radius: 50%;
+    display: inline-grid;
+    place-items: center;
+    cursor: pointer;
+    vertical-align: middle;
+}
+
+#gracewell-quietshield-app .info-btn:hover {
+    color: var(--blue);
+}
+
+#gracewell-quietshield-app .info-btn .i {
+    width: 15px;
+    height: 15px;
+}
+
+@media (max-width: 640px) {
+    #gracewell-quietshield-app .check-table thead {
+        display: none;
+    }
+
+    #gracewell-quietshield-app .check-table,
+    #gracewell-quietshield-app .check-table tbody,
+    #gracewell-quietshield-app .check-table tr,
+    #gracewell-quietshield-app .check-table td {
+        display: block;
+        width: 100%;
+    }
+
+    #gracewell-quietshield-app .check-table tr {
+        padding: 12px 0;
+        border-bottom: 1px solid var(--line-2);
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-template-areas: "name act" "desc desc" "pill pill";
+        gap: 6px 8px;
+        align-items: center;
+    }
+
+    #gracewell-quietshield-app .check-table td {
+        border: 0 !important;
+        padding: 0 !important;
+    }
+
+    #gracewell-quietshield-app .check-table td:nth-child(1) {
+        grid-area: name;
+    }
+
+    #gracewell-quietshield-app .check-table td:nth-child(2) {
+        grid-area: desc;
+        padding-left: 38px !important;
+    }
+
+    #gracewell-quietshield-app .check-table td:nth-child(3) {
+        grid-area: pill;
+        padding-left: 38px !important;
+    }
+
+    #gracewell-quietshield-app .check-table td:nth-child(4) {
+        grid-area: act;
+        justify-self: end;
+    }
+}
+
+/* ---------- Server Configuration / Undo panel ---------- */
+#gracewell-quietshield-app .divide>*+* {
+    border-top: 1px solid var(--line-2);
+}
+
+#gracewell-quietshield-app .lrow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+}
+
+#gracewell-quietshield-app .lrow:first-child {
+    padding-top: 4px;
+}
+
+#gracewell-quietshield-app .lrow:last-child {
+    padding-bottom: 2px;
+}
+
+#gracewell-quietshield-app .lrow .tile {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+}
+
+#gracewell-quietshield-app .lrow .txt {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+#gracewell-quietshield-app .lrow .txt b {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+}
+
+#gracewell-quietshield-app .lrow .txt small {
+    font-size: 11.5px;
+    color: var(--muted);
+}
+
+#gracewell-quietshield-app .lrow .btn {
+    flex: none;
+}
+
+#gracewell-quietshield-app .panel.undo {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    padding: 12px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+#gracewell-quietshield-app .panel.undo .tile {
+    width: 32px;
+    height: 32px;
+}
+
+#gracewell-quietshield-app .panel.undo b {
+    font-size: 13px;
+    color: var(--ink);
+    display: block;
+    margin-bottom: 2px;
+}
+
+#gracewell-quietshield-app .panel.undo p {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.4;
+    margin: 0 0 10px;
+}
+
+#gracewell-quietshield-app .btn-danger {
+    background: var(--red-50);
+    color: var(--red);
+    border-color: rgba(220, 38, 38, .2);
+}
+
+#gracewell-quietshield-app .btn-danger:hover {
+    background: var(--red);
+    color: #fff;
+    border-color: var(--red);
+}
+
+/* ---------- Score breakdown ring ---------- */
+#gracewell-quietshield-app .break {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 4px 0;
+}
+
+#gracewell-quietshield-app .ring-box {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    flex: none;
+    margin: 0 auto;
+}
+
+#gracewell-quietshield-app .ring {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: conic-gradient(var(--blue) calc(var(--p, 67) * 1%), var(--track) 0);
+    mask: radial-gradient(circle closest-side, transparent 72%, black 73%);
+    -webkit-mask: radial-gradient(circle closest-side, transparent 72%, black 73%);
+}
+
+#gracewell-quietshield-app .ring-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--ink);
+    line-height: 1;
+    pointer-events: none;
+}
+
+#gracewell-quietshield-app .ring-center small {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 600;
+    margin-top: 3px;
+}
+
+#gracewell-quietshield-app .break-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    flex: 1 1 150px;
+    display: grid;
+    gap: 6px;
+    font-size: 12px;
+}
+
+#gracewell-quietshield-app .break-list li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--ink-2);
+}
+
+#gracewell-quietshield-app .break-list span {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#gracewell-quietshield-app .break-list b {
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+}
+
+#gracewell-quietshield-app .c-green {
+    color: var(--green) !important;
+}
+
+#gracewell-quietshield-app .c-amber {
+    color: var(--amber-500) !important;
+}
+
+#gracewell-quietshield-app .c-red {
+    color: var(--red-500) !important;
+}
+
+#gracewell-quietshield-app .c-purple {
+    color: var(--purple-500) !important;
+}
+
+#gracewell-quietshield-app .c-blue {
+    color: var(--blue) !important;
+}
+
+/* ---------- Recommendations ---------- */
+#gracewell-quietshield-app .rec-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-top: 8px;
+}
+
+#gracewell-quietshield-app .rec-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-top: 1px solid var(--line-2);
+}
+
+#gracewell-quietshield-app .rec-item:first-child {
+    border-top: 0;
+}
+
+#gracewell-quietshield-app .rec-ic {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    flex: none;
+}
+
+#gracewell-quietshield-app .rec-ic .i {
+    width: 14px;
+    height: 14px;
+    stroke-width: 2.5;
+    color: #fff;
+}
+
+#gracewell-quietshield-app .rec-ic.todo {
+    background: var(--amber-500);
+}
+
+#gracewell-quietshield-app .rec-ic.done {
+    background: var(--green-500);
+}
+
+#gracewell-quietshield-app .rec-txt {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+#gracewell-quietshield-app .rec-txt b {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.25;
+}
+
+#gracewell-quietshield-app .rec-txt small {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.3;
+    margin-top: 2px;
+}
+
+#gracewell-quietshield-app .rec-item .btn {
+    flex: none;
+}
+
+/* Recommendation list rows (uses .lrow markup in JS) */
+#gracewell-quietshield-app #recList .lrow {
+    padding: 12px 0;
+}
