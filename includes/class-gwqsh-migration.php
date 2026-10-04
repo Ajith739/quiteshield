@@ -86,6 +86,12 @@ final class GWQSH_Migration {
 	}
 	/**
 	 * Keys.
+	 *
+	 * Row-by-row rename is used instead of a MySQL-only
+	 * "UPDATE ... JOIN ... SET alias" statement so the one-time migration
+	 * works on every $wpdb driver (including SQLite drop-ins). Semantics are
+	 * identical: legacy keys are renamed only when no modern key exists, and
+	 * existing modern values are never overwritten.
 	 */
 	private static function keys() {
 		global $wpdb;
@@ -94,40 +100,74 @@ final class GWQSH_Migration {
 			'_transient_gqs_'         => '_transient_gwqsh_',
 			'_transient_timeout_gqs_' => '_transient_timeout_gwqsh_',
 		) as $old => $new ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-			$names = $wpdb->get_col(
-				$wpdb->prepare(
-					"SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s",
-					$wpdb->esc_like( $old ) . '%'
-				)
-			);
-			self::query(
-				$wpdb->prepare(
-					"UPDATE {$wpdb->options} legacy LEFT JOIN {$wpdb->options} modern ON modern.option_name = CONCAT(%s, SUBSTRING(legacy.option_name, %d)) SET legacy.option_name = CONCAT(%s, SUBSTRING(legacy.option_name, %d)) WHERE legacy.option_name LIKE %s AND modern.option_id IS NULL",
-					$new,
-					strlen( $old ) + 1,
-					$new,
-					strlen( $old ) + 1,
-					$wpdb->esc_like( $old ) . '%'
-				)
-			);
-			foreach ( $names as $name ) {
-				wp_cache_delete( $name, 'options' );
-				wp_cache_delete( $new . substr( $name, strlen( $old ) ), 'options' );
-			}
+			$cursor = 0;
+			do {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter -- One-time bounded migration; identifiers are fixed WordPress tables and every value is prepared.
+				$rows = $wpdb->get_results(
+					$wpdb->prepare(
+						"SELECT option_id, option_name FROM {$wpdb->options} WHERE option_name LIKE %s AND option_id > %d ORDER BY option_id LIMIT 200",
+						$wpdb->esc_like( $old ) . '%',
+						$cursor
+					)
+				);
+				foreach ( $rows as $row ) {
+					$cursor = (int) $row->option_id;
+					$target = $new . substr( $row->option_name, strlen( $old ) );
+					if ( $target === $row->option_name ) {
+						continue;
+					}
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+					$modern = $wpdb->get_var( $wpdb->prepare( "SELECT option_id FROM {$wpdb->options} WHERE option_name = %s", $target ) );
+					if ( null !== $modern ) {
+						wp_cache_delete( $row->option_name, 'options' );
+						continue;
+					}
+					self::query(
+						$wpdb->prepare(
+							"UPDATE {$wpdb->options} SET option_name = %s WHERE option_id = %d",
+							$target,
+							(int) $row->option_id
+						)
+					);
+					wp_cache_delete( $row->option_name, 'options' );
+					wp_cache_delete( $target, 'options' );
+				}
+			} while ( count( $rows ) === 200 );
 		}
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$users = $wpdb->get_col( $wpdb->prepare( "SELECT DISTINCT user_id FROM {$wpdb->usermeta} WHERE meta_key LIKE %s", $wpdb->esc_like( 'gqs_' ) . '%' ) );
-		self::query(
-			$wpdb->prepare(
-				"UPDATE {$wpdb->usermeta} legacy LEFT JOIN {$wpdb->usermeta} modern ON modern.user_id = legacy.user_id AND modern.meta_key = CONCAT(%s, SUBSTRING(legacy.meta_key, %d)) SET legacy.meta_key = CONCAT(%s, SUBSTRING(legacy.meta_key, %d)) WHERE legacy.meta_key LIKE %s AND modern.umeta_id IS NULL",
-				'gwqsh_',
-				5,
-				'gwqsh_',
-				5,
-				$wpdb->esc_like( 'gqs_' ) . '%'
-			)
-		);
+		$cursor = 0;
+		do {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter -- One-time bounded migration; identifiers are fixed WordPress tables and every value is prepared.
+			$rows = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT umeta_id, user_id, meta_key FROM {$wpdb->usermeta} WHERE meta_key LIKE %s AND umeta_id > %d ORDER BY umeta_id LIMIT 200",
+					$wpdb->esc_like( 'gqs_' ) . '%',
+					$cursor
+				)
+			);
+			foreach ( $rows as $row ) {
+				$cursor = (int) $row->umeta_id;
+				$target = 'gwqsh_' . substr( $row->meta_key, 4 );
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+				$modern = $wpdb->get_var(
+					$wpdb->prepare(
+						"SELECT umeta_id FROM {$wpdb->usermeta} WHERE user_id = %d AND meta_key = %s",
+						(int) $row->user_id,
+						$target
+					)
+				);
+				if ( null === $modern ) {
+					self::query(
+						$wpdb->prepare(
+							"UPDATE {$wpdb->usermeta} SET meta_key = %s WHERE umeta_id = %d",
+							$target,
+							(int) $row->umeta_id
+						)
+					);
+				}
+			}
+		} while ( count( $rows ) === 200 );
 		foreach ( $users as $user_id ) {
 			wp_cache_delete( (int) $user_id, 'user_meta' );
 		}

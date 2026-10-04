@@ -4,7 +4,7 @@ Tags: security, login protection, two factor authentication, hardening, activity
 Requires at least: 5.3
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -17,13 +17,14 @@ Gracewell QuietShield provides these security tools:
 * Login attempt limits, IP lockouts, IP/CIDR allowlisting and an optional custom login URL.
 * TOTP authentication compatible with Google Authenticator, Microsoft Authenticator, Authy and other standard authenticator apps. Enrollment requires verification. Secrets are encrypted, backup codes are hashed and single-use, and trusted devices can be revoked.
 * Per-user 2FA, optional enrollment for other roles, administrator requirements and individual user setup requirements. Required users must complete setup before normal access resumes.
-* Manual WordPress core checksum verification, modified/missing core file reports, suspicious uploads and backdoor-pattern detection in plugin/theme PHP files. Core findings support bounded text differences and checksum-verified restoration. Suspicious files can be quarantined.
+* Behavioral malware detection across WordPress core, plugins, themes, uploads, the webroot and must-use plugins: an explainable rule engine (cloaking, remote payloads, self-healing persistence, web shells, obfuscation, TLS bypass, dynamic includes and more) scores every finding from Informational to Critical with line-level evidence.
+* Optional Gracewell Early Guardian must-use plugin: boot-time checks that neutralize only extremely-high-confidence malware before it loads. Quarantine is non-destructive, and trusted baselines protect against false positives.
 * Hardening controls for XML-RPC, the file editor, version disclosure, user enumeration, security headers and executable scripts in uploads. Risk and passed/failed checks are calculated from enabled protections.
 * Activity logging, configurable retention, exports and responsive light/dark admin themes.
 
-The scanner uses official WordPress.org core checksums. Plugin and theme checks are signature checks rather than official package integrity verification. Scan scope is bounded on large sites. Suspicious findings require review; they are not proof of malware. No external authentication service receives TOTP secrets.
+The scanner uses official WordPress.org core checksums when available and degrades gracefully offline. Detection is primarily behavioral (token-based static analysis), with known incident signatures used only as supplemental evidence. Scan scope is bounded on large sites. Suspicious findings require review; they are not proof of malware. The Early Guardian only auto-quarantines files matching extremely-high-confidence incident behavior. No external authentication service receives TOTP secrets.
 
-Uploads execution protection writes Apache 2.4 .htaccess rules. Nginx and other servers require equivalent server configuration. Security headers should be tested with your site's integrations.
+Uploads execution protection writes Apache 2.4 .htaccess rules. Quarantined files are never deleted: they are moved to an execution-blocked storage area with full provenance and can be restored through the admin UI. Nginx and other servers require equivalent server configuration. Security headers should be tested with your site's integrations.
 
 == Installation ==
 
@@ -54,6 +55,16 @@ No. Core files are checked against official checksums. Plugin/theme PHP and uplo
 Minimum supported versions are WordPress 5.3 and PHP 7.4. Local testing used WordPress 7.1.2 and PHP 8.2.12. Minimum-version combinations have not been executed.
 
 == Changelog ==
+
+= 1.1.0 =
+* Behavioral security engine: rule-based detection with explainable severity scoring (Informational to Critical) for cloaking/traffic hijacking, remote payload loading, TLS verification bypass, self-healing persistence, critical file writes, web shells, obfuscation, dynamic includes, uploads executables and front-end injections.
+* Must-use plugin monitoring with trusted SHA-256 baselines; new or changed must-use plugins are surfaced for review.
+* .htaccess and wp-config.php auditors for cloaking redirects, execution re-enabling, injected includes and encoded payloads.
+* Optional Gracewell Early Guardian (mu-plugin) with boot-time neutralization of extremely-high-confidence malware and documented limitations.
+* Non-destructive quarantine overhaul: random names, execution-blocked storage, full provenance (original path, SHA-256, reason, severity), and controlled administrator restore.
+* Findings now carry severity, rule ID, risk score, content hash and evidence; the File Integrity dashboard lists them in the existing interface with MU Plugin and Root scopes.
+* Baselines are never established while unresolved Critical findings exist.
+* File scan limits raised and documented; bounded scanning with time budget and "could not fully analyze" markers for oversized files.
 
 = 1.0.0 =
 * Initial public release.

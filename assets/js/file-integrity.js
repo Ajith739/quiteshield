@@ -441,6 +441,90 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 400);
     });
 
+    /* ---------- early guardian ---------- */
+    const guardianVerdict = { trusted: ['p-green', 'trusted'], ok: ['p-green', 'clean'], review: ['p-amber', 'review'], neutralized: ['p-red', 'blocked'], block_failed: ['p-red', 'quarantine failed'], unreadable: ['p-amber', 'unreadable'], unknown: ['p-amber', 'pending'] };
+
+    function guardianModal(g, msg, msgType) {
+        g = g || {};
+        const status = g.status || 'absent';
+        const statusPill = { active: 'p-green', outdated: 'p-amber', modified: 'p-red', absent: 'p-amber' }[status] || 'p-amber';
+        const statusText = { active: 'Active', outdated: 'Update available', modified: 'Modified - review required', absent: 'Not installed' }[status] || status;
+        let body = '<p class="muted" style="margin:4px 0 10px">The Early Guardian is an optional must-use plugin. It checks must-use plugins before they load and quarantines only extremely-high-confidence malware; WordPress itself never stops working.</p>';
+        body += '<p style="margin:6px 0">Status: <span class="pill ' + statusPill + '">' + esc(statusText) + '</span>' +
+            (g.mu_baseline && g.mu_baseline.files ? ' <span class="pill p-blue">' + g.mu_baseline.files + ' baseline file' + (g.mu_baseline.files === 1 ? '' : 's') + '</span>' : '') + '</p>';
+        if (msg) toast(msg, msgType || 'ok');
+
+        if (Array.isArray(g.files) && g.files.length) {
+            body += '<p class="muted" style="margin:12px 0 4px;font-size:12px">MUST-USE PLUGINS</p>';
+            body += g.files.map(f => {
+                const v = guardianVerdict[f.verdict] || guardianVerdict.unknown;
+                return '<p class="path" style="word-break:break-all;font-size:12.5px;padding:6px 10px;background:var(--bg-2);border:1px solid var(--line-2);border-radius:6px;margin:4px 0">' +
+                    esc(f.file) + ' <span class="pill ' + v[0] + '">' + v[1] + '</span></p>';
+            }).join('');
+        }
+        const quarantined = (g.quarantined || []).filter(q => q.source === 'guardian');
+        if (quarantined.length) {
+            body += '<p class="muted" style="margin:12px 0 4px;font-size:12px">NEUTRALIZED BY GUARDIAN</p>';
+            body += quarantined.slice(0, 5).map(q =>
+                '<p class="path" style="word-break:break-all;font-size:12.5px;padding:6px 10px;background:var(--bg-2);border:1px solid var(--line-2);border-radius:6px;margin:4px 0">' +
+                esc(q.original || '') + ' <button class="btn btn-neutral" data-gwqsh-restore="' + esc(q.file) + '" type="button">Restore</button></p>').join('');
+        }
+
+        const actions = [];
+        if (status === 'active' || status === 'outdated') {
+            actions.push({
+                label: 'Remove Guardian', cls: 'btn-neutral',
+                fn: async () => {
+                    const res = await GWQSH.ajax('guardian_uninstall');
+                    if (!res.success) { toast(res.data?.message || 'Removal failed', 'err'); return false; }
+                    guardianModal(res.data.guardian, res.data?.message, 'ok');
+                    return true;
+                }
+            });
+        }
+        if (status !== 'active') {
+            actions.push({
+                label: status === 'outdated' ? 'Update Guardian' : 'Install Guardian', cls: 'btn-danger',
+                fn: async () => {
+                    const res = await GWQSH.ajax('guardian_install');
+                    if (!res.success) { toast(res.data?.message || 'Installation failed', 'err'); return false; }
+                    guardianModal(res.data.guardian, res.data?.message, 'ok');
+                    return true;
+                }
+            });
+        }
+        actions.push({
+            label: 'Establish Baselines', cls: 'btn-neutral',
+            fn: async () => {
+                const res = await GWQSH.ajax('establish_baseline');
+                if (!res.success) { toast(res.data?.message || 'Baseline failed', 'err'); return false; }
+                guardianModal(res.data.guardian, res.data?.message, 'ok');
+                return true;
+            }
+        });
+
+        const box = modal({ title: 'Early Guardian', body, actions });
+        $$('[data-gwqsh-restore]', box.el).forEach(btn => btn.addEventListener('click', async () => {
+            const name = btn.dataset.gwqshRestore;
+            btn.disabled = true;
+            const res = await GWQSH.ajax('restore_quarantine', { name });
+            btn.disabled = false;
+            if (!res.success) { toast(res.data?.message || 'Restore failed', 'err'); return; }
+            box.close();
+            guardianModal(res.data.guardian, res.data?.message, 'ok');
+        }));
+    }
+
+    $('#toolGuardian').addEventListener('click', async () => {
+        let g = D.guardian;
+        if (!g) {
+            const res = await GWQSH.ajax('guardian_status');
+            if (!res.success) { toast(res.data?.message || 'Guardian status unavailable', 'err'); return; }
+            g = res.data.guardian;
+        }
+        guardianModal(g);
+    });
+
     draw();
     refreshSummary();
 });

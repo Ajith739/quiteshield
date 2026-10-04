@@ -2,8 +2,8 @@
 /**
  * Plugin Name: Gracewell QuietShield
  * Plugin URI: https://gracewell.in/gracewell-quiteshield/
- * Description: A WordPress security plugin providing login protection, two-factor authentication, file integrity monitoring, security hardening, and related security tools.
- * Version: 1.0.0
+ * Description: A WordPress security plugin providing login protection, two-factor authentication, behavioral file integrity monitoring with an optional boot-time Early Guardian, security hardening, and related security tools.
+ * Version: 1.1.0
  * Author: Ajithkumar739
  * Author URI: https://gracewell.in/
  * Contributors: gracewell89
@@ -21,8 +21,8 @@ defined( 'ABSPATH' ) || exit;
 
 define( 'GWQSH_PATH', plugin_dir_path( __FILE__ ) );
 define( 'GWQSH_URL', plugin_dir_url( __FILE__ ) );
-define( 'GWQSH_VERSION', '1.0.0' );
-define( 'GWQSH_DB_VERSION', '1.0.0' );
+define( 'GWQSH_VERSION', '1.1.0' );
+define( 'GWQSH_DB_VERSION', '1.1.0' );
 define( 'GWQSH_PLUGIN_FILE', __FILE__ );
 define( 'GWQSH_PLUGIN_DIR', GWQSH_PATH );
 define( 'GWQSH_PLUGIN_URL', GWQSH_URL );
@@ -46,6 +46,34 @@ require_once GWQSH_PATH . 'includes/class-gwqsh-hardening.php';
 require_once GWQSH_PATH . 'includes/class-gwqsh-file-integrity.php';
 require_once GWQSH_PATH . 'includes/class-gwqsh-ajax.php';
 require_once GWQSH_PATH . 'includes/class-gwqsh-admin.php';
+
+// Security engine (behavioral malware detection + Early Guardian support).
+// The pure-function kernel must load first: it is shared with the mu-plugin
+// Guardian and every detection rule depends on its helpers.
+require_once GWQSH_PATH . 'includes/security/gwqsh-guardian-core.php';
+require_once GWQSH_PATH . 'includes/security/class-gwqsh-path-guard.php';
+require_once GWQSH_PATH . 'includes/security/class-gwqsh-php-analyzer.php';
+require_once GWQSH_PATH . 'includes/security/rules/class-gwqsh-detection-rule.php';
+require_once GWQSH_PATH . 'includes/security/rules/class-gwqsh-rule-cloaking.php';
+require_once GWQSH_PATH . 'includes/security/rules/class-gwqsh-rule-remote-payload.php';
+require_once GWQSH_PATH . 'includes/security/rules/class-gwqsh-rule-tls-bypass.php';
+require_once GWQSH_PATH . 'includes/security/rules/class-gwqsh-rule-self-healing.php';
+require_once GWQSH_PATH . 'includes/security/rules/class-gwqsh-rule-critical-write.php';
+require_once GWQSH_PATH . 'includes/security/rules/class-gwqsh-rule-web-shell.php';
+require_once GWQSH_PATH . 'includes/security/rules/class-gwqsh-rule-obfuscation.php';
+require_once GWQSH_PATH . 'includes/security/rules/class-gwqsh-rule-dynamic-include.php';
+require_once GWQSH_PATH . 'includes/security/rules/class-gwqsh-rule-js-injection.php';
+require_once GWQSH_PATH . 'includes/security/rules/class-gwqsh-rule-mu-persistence.php';
+require_once GWQSH_PATH . 'includes/security/rules/class-gwqsh-rule-upload-executable.php';
+require_once GWQSH_PATH . 'includes/security/rules/class-gwqsh-rule-signature.php';
+require_once GWQSH_PATH . 'includes/security/class-gwqsh-detection-rules.php';
+require_once GWQSH_PATH . 'includes/security/class-gwqsh-scoring-engine.php';
+require_once GWQSH_PATH . 'includes/security/class-gwqsh-baseline-manager.php';
+require_once GWQSH_PATH . 'includes/security/class-gwqsh-quarantine-manager.php';
+require_once GWQSH_PATH . 'includes/security/class-gwqsh-htaccess-auditor.php';
+require_once GWQSH_PATH . 'includes/security/class-gwqsh-wpconfig-auditor.php';
+require_once GWQSH_PATH . 'includes/security/class-gwqsh-security-scanner.php';
+require_once GWQSH_PATH . 'includes/security/class-gwqsh-guardian-manager.php';
 
 // Activation and Deactivation lifecycle hooks.
 register_activation_hook( __FILE__, 'gwqsh_activate_plugin' );

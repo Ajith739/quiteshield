@@ -77,10 +77,16 @@ final class GWQSH_DB {
             details text NOT NULL,
             detected_at datetime NOT NULL,
             is_resolved tinyint(1) NOT NULL DEFAULT 0,
+            severity varchar(20) NOT NULL DEFAULT '',
+            rule_id varchar(100) NOT NULL DEFAULT '',
+            risk_score int(11) NOT NULL DEFAULT 0,
+            file_sha256 char(64) NOT NULL DEFAULT '',
+            evidence text NOT NULL,
             PRIMARY KEY  (id),
             KEY idx_status (status),
             KEY idx_file_type (file_type),
-            KEY idx_is_resolved (is_resolved)
+            KEY idx_is_resolved (is_resolved),
+            KEY idx_severity (severity)
         ) {$charset_collate};";
 		dbDelta( $sql_scan );
 

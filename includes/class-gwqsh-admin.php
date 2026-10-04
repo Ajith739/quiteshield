@@ -303,6 +303,7 @@ final class GWQSH_Admin {
 					'summary' => GWQSH_File_Integrity::get_summary(),
 					'issues'  => GWQSH_File_Integrity::get_scan_issues(),
 					'history' => GWQSH_File_Integrity::get_scan_history(),
+					'guardian' => GWQSH_Guardian_Manager::overview(),
 				);
 				break;
 

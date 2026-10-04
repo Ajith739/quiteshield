@@ -13,6 +13,24 @@ foreach ( array( 'gwqsh_', 'gqs_' ) as $gwqsh_prefix ) {
 		wp_clear_scheduled_hook( $gwqsh_prefix . $gwqsh_suffix );
 	}
 }
+
+// Always remove the deployed Early Guardian must-use plugin (it belongs to this
+// plugin); removal is refused when the deployed copy was modified by anyone
+// other than Gracewell, so unexpected content stays visible for review.
+if ( defined( 'WPMU_PLUGIN_DIR' ) && WPMU_PLUGIN_DIR && is_dir( WPMU_PLUGIN_DIR ) && ! is_link( WPMU_PLUGIN_DIR ) ) {
+	$gwqsh_guardian = WPMU_PLUGIN_DIR . '/000-gracewell-guardian.php';
+	if ( is_file( $gwqsh_guardian ) && ! is_link( $gwqsh_guardian ) ) {
+		$gwqsh_guardian_real = realpath( $gwqsh_guardian );
+		$gwqsh_mu_real       = realpath( WPMU_PLUGIN_DIR );
+		if ( $gwqsh_guardian_real && $gwqsh_mu_real && dirname( $gwqsh_guardian_real ) === $gwqsh_mu_real ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local plugin-owned file, never a URL.
+			$gwqsh_guardian_src = file_get_contents( $gwqsh_guardian_real );
+			if ( false !== $gwqsh_guardian_src && false !== strpos( $gwqsh_guardian_src, 'Gracewell Early Guardian' ) ) {
+				wp_delete_file( $gwqsh_guardian_real );
+			}
+		}
+	}
+}
 $gwqsh_settings = get_option( 'gwqsh_settings', get_option( 'gqs_settings', array() ) );
 if ( empty( $gwqsh_settings['uninstall'] ) ) {
 	return; }

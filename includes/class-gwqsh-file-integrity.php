@@ -113,196 +113,10 @@ final class GWQSH_File_Integrity {
 	 * Run full scan.
 	 */
 	public static function run_full_scan() {
-		self::$inspected = array(
-			'Plugin'  => 0,
-			'Theme'   => 0,
-			'Uploads' => 0,
-		);
-		global $wpdb;
-		$t0 = microtime( true );
-
-		$checksums     = self::get_core_checksums();
-		$results_table = esc_sql( $wpdb->prefix . 'gwqsh_scan_results' );
-		$history_table = esc_sql( $wpdb->prefix . 'gwqsh_scan_history' );
-
-		if ( ! is_array( $checksums ) ) {
-			return new WP_Error( 'checksums_unavailable', 'WordPress core checksums are unavailable.' );
-		}
-		// Clear previous unresolved issues.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-		$wpdb->delete( $results_table, array( 'is_resolved' => 0 ) );
-
-		$total_files      = 0;
-		$clean_files      = 0;
-		$modified_count   = 0;
-		$missing_count    = 0;
-		$suspicious_count = 0;
-		$now              = current_time( 'mysql' );
-
-		// 1. Verify Core Checksums
-		if ( is_array( $checksums ) ) {
-			foreach ( $checksums as $relative_path => $expected_md5 ) {
-				++$total_files;
-				$full_path = ABSPATH . $relative_path;
-
-				if ( ! file_exists( $full_path ) ) {
-					++$missing_count;
-					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-					$wpdb->insert(
-						$results_table,
-						array(
-							'file_path'   => '/' . ltrim( $relative_path, '/' ),
-							'file_type'   => 'Core',
-							'status'      => 'Missing',
-							'details'     => 'Official WordPress core file is missing',
-							'detected_at' => $now,
-							'is_resolved' => 0,
-						)
-					);
-					continue;
-				}
-
-				$actual_md5 = ( is_file( $full_path ) && ! is_link( $full_path ) && is_readable( $full_path ) ) ? md5_file( $full_path ) : false;
-				if ( $actual_md5 !== $expected_md5 ) {
-					++$modified_count;
-					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-					$wpdb->insert(
-						$results_table,
-						array(
-							'file_path'   => '/' . ltrim( $relative_path, '/' ),
-							'file_type'   => 'Core',
-							'status'      => 'Modified',
-							'details'     => 'Official MD5: ' . $expected_md5 . '; current MD5: ' . ( $actual_md5 ? $actual_md5 : 'unreadable or not a regular file' ),
-							'detected_at' => $now,
-							'is_resolved' => 0,
-						)
-					);
-				} else {
-					++$clean_files;
-				}
-			}
-		}
-
-		// Unexpected PHP in core directories is an added-file finding.
-		$inspected = 0;
-		foreach ( array( 'wp-admin', 'wp-includes' ) as $core_dir ) {
-			$directory = ABSPATH . $core_dir;
-			if ( ! is_dir( $directory ) || is_link( $directory ) ) {
-				continue; }
-			$iterator = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $directory, FilesystemIterator::SKIP_DOTS ) );
-			foreach ( $iterator as $item ) {
-				if ( ++$inspected > 25000 ) {
-					break 2; }
-				if ( ! $item->isFile() || $item->isLink() || 'php' !== strtolower( $item->getExtension() ) ) {
-					continue; }
-				$relative = substr( wp_normalize_path( $item->getPathname() ), strlen( wp_normalize_path( ABSPATH ) ) );
-				if ( isset( $checksums[ $relative ] ) ) {
-					continue; }
-				++$total_files;
-				++$suspicious_count;
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-				$wpdb->insert(
-					$results_table,
-					array(
-						'file_path'   => '/' . $relative,
-						'file_type'   => 'Core',
-						'status'      => 'Suspicious',
-						'details'     => 'Unexpected PHP file in a WordPress core directory',
-						'detected_at' => $now,
-						'is_resolved' => 0,
-					)
-				);
-			}
-		}
-
-		// 2. Scan Uploads Directory for PHP scripts & suspicious files
-		$extra_core   = max( 0, $total_files - count( $checksums ) );
-		$upload_dir   = wp_upload_dir();
-		$uploads_base = $upload_dir['basedir'];
-		if ( is_dir( $uploads_base ) ) {
-			$uploads_issues = self::scan_directory_for_suspicious( $uploads_base, 'Uploads' );
-			foreach ( $uploads_issues as $issue ) {
-				++$suspicious_count;
-				++$total_files;
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-				$wpdb->insert(
-					$results_table,
-					array(
-						'file_path'   => $issue['path'],
-						'file_type'   => 'Uploads',
-						'status'      => 'Suspicious',
-						'details'     => $issue['detail'],
-						'detected_at' => $now,
-						'is_resolved' => 0,
-					)
-				);
-			}
-		}
-
-		// 3. Scan Active Plugins for obvious backdoors / eval patterns
-		$plugins_issues = self::scan_plugins_and_themes();
-		foreach ( $plugins_issues as $issue ) {
-			++$total_files;
-			if ( 'Suspicious' === $issue['status'] ) {
-				++$suspicious_count;
-			} else {
-				++$modified_count;
-			}
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-			$wpdb->insert(
-				$results_table,
-				array(
-					'file_path'   => $issue['path'],
-					'file_type'   => $issue['type'],
-					'status'      => $issue['status'],
-					'details'     => $issue['detail'],
-					'detected_at' => $now,
-					'is_resolved' => 0,
-				)
-			);
-		}
-
-		$duration = max( 1, (int) round( microtime( true ) - $t0 ) );
-		update_option( 'gwqsh_last_scan_time', $now );
-		update_option( 'gwqsh_last_scan_duration', $duration );
-		update_option( 'gwqsh_last_scan_total', $total_files );
-		update_option( 'gwqsh_last_scan_core_total', count( $checksums ) );
-		$total_files = count( $checksums ) + $extra_core + array_sum( self::$inspected );
-		$clean_files = max( 0, $total_files - $modified_count - $missing_count - $suspicious_count );
-		update_option( 'gwqsh_last_scan_total', $total_files );
-		update_option( 'gwqsh_last_scan_scope_counts', self::$inspected );
-
-		// Record history entry.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-		$wpdb->insert(
-			$history_table,
-			array(
-				'scan_date'        => $now,
-				'duration'         => $duration,
-				'total_files'      => $total_files,
-				'clean_files'      => $clean_files,
-				'modified_files'   => $modified_count,
-				'missing_files'    => $missing_count,
-				'suspicious_files' => $suspicious_count,
-			)
-		);
-
-		$issues_total = $modified_count + $missing_count + $suspicious_count;
-		GWQSH_Activity_Logger::log(
-			'File scan completed',
-			sprintf( 'Scanned %d files: %d modified, %d missing, %d suspicious', $total_files, $modified_count, $missing_count, $suspicious_count ),
-			'System'
-		);
-
-		return array(
-			'total'      => $total_files,
-			'clean'      => $clean_files,
-			'modified'   => $modified_count,
-			'missing'    => $missing_count,
-			'suspicious' => $suspicious_count,
-			'duration'   => $duration,
-			'date'       => $now,
-		);
+		// The behavioral security engine (scanner, rules, scoring, auditors)
+		// performs the scan; this class keeps its public API for AJAX, UI and
+		// core checksum/restore helpers.
+		return GWQSH_Security_Scanner::run();
 	}
 	/**
 	 * Scan directory for suspicious.
@@ -482,6 +296,17 @@ final class GWQSH_File_Integrity {
 			'th-ok'     => (int) ( $scope_counts['Theme'] ?? 0 ),
 			'up-php'    => 0,
 			'up-ok'     => (int) ( $scope_counts['Uploads'] ?? 0 ),
+			'mu-mod'    => 0,
+			'mu-sus'    => 0,
+			'mu-ok'     => (int) ( $scope_counts['MU'] ?? 0 ),
+			'root-sus'  => 0,
+		);
+		$severity_counts = array(
+			'critical' => 0,
+			'high'     => 0,
+			'medium'   => 0,
+			'low'      => 0,
+			'info'     => 0,
 		);
 
 		if ( $issues ) {
@@ -515,6 +340,25 @@ final class GWQSH_File_Integrity {
 				} elseif ( 'Uploads' === $tp && 'Suspicious' === $st ) {
 					$breakdown['up-php'] += $c;
 					$breakdown['up-ok']   = max( 0, $breakdown['up-ok'] - $c );
+				} elseif ( 'MU Plugin' === $tp && 'Modified' === $st ) {
+					$breakdown['mu-mod'] += $c;
+					$breakdown['mu-ok']   = max( 0, $breakdown['mu-ok'] - $c );
+				} elseif ( 'MU Plugin' === $tp && 'Suspicious' === $st ) {
+					$breakdown['mu-sus'] += $c;
+					$breakdown['mu-ok']   = max( 0, $breakdown['mu-ok'] - $c );
+				} elseif ( 'Root' === $tp && 'Suspicious' === $st ) {
+					$breakdown['root-sus'] += $c;
+				}
+			}
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- Fixed plugin-owned table identifier; severity column exists from DB version 1.1.0.
+		$severities = $wpdb->get_results( "SELECT severity, COUNT(*) as c FROM {$table} WHERE is_resolved = 0 AND severity <> '' GROUP BY severity", ARRAY_A );
+		if ( $severities ) {
+			foreach ( $severities as $srow ) {
+				$key = strtolower( (string) $srow['severity'] );
+				if ( isset( $severity_counts[ $key ] ) ) {
+					$severity_counts[ $key ] += (int) $srow['c'];
 				}
 			}
 		}
@@ -541,8 +385,12 @@ final class GWQSH_File_Integrity {
 					'Plugin'  => 0,
 					'Theme'   => 0,
 					'Uploads' => 0,
+					'MU'      => 0,
+					'Root'    => 0,
 				)
 			),
+			'severities'   => $severity_counts,
+			'degraded'     => get_option( 'gwqsh_last_scan_degraded', array() ),
 		);
 	}
 	/**
@@ -645,75 +493,32 @@ final class GWQSH_File_Integrity {
 		}
 		list( $clean_path, $full_path ) = $resolved;
 
-		if ( ! file_exists( $full_path ) ) {
-			return false;
+		global $wpdb;
+		$table = esc_sql( $wpdb->prefix . 'gwqsh_scan_results' );
+		$meta  = array();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- Fixed plugin-owned table identifier from the WordPress prefix.
+		$finding = $wpdb->get_row( $wpdb->prepare( "SELECT severity, rule_id, risk_score, file_sha256 FROM {$table} WHERE is_resolved = 0 AND (file_path = %s OR file_path = %s) LIMIT 1", '/' . ltrim( $relative_path, '/' ), ltrim( $relative_path, '/' ) ) );
+		if ( $finding ) {
+			$meta = array(
+				'severity' => $finding->severity,
+				'rule_id'  => $finding->rule_id,
+				'score'    => (int) $finding->risk_score,
+				'sha256'   => $finding->file_sha256,
+			);
 		}
 
-		$hash     = substr( hash_hmac( 'sha256', home_url(), wp_salt( 'auth' ) ), 0, 20 );
-		$quar_dir = trailingslashit( get_temp_dir() ) . 'gwqsh-quarantine-' . $hash;
-		if ( ! is_dir( $quar_dir ) ) {
-			wp_mkdir_p( $quar_dir );
-		}
-		if ( ! is_dir( $quar_dir ) || ! wp_is_writable( $quar_dir ) ) {
-			$upload_dir = wp_upload_dir();
-			$quar_dir   = trailingslashit( $upload_dir['basedir'] ) . 'gwqsh-quarantine-' . $hash;
-			if ( ! is_dir( $quar_dir ) ) {
-				wp_mkdir_p( $quar_dir );
-			}
-		}
-
-		if ( ! is_dir( $quar_dir ) || is_link( $quar_dir ) || ! wp_is_writable( $quar_dir ) ) {
-			return false;
-		}
-
-		// Security: prevent web execution in quarantine directory.
-		$htaccess = trailingslashit( $quar_dir ) . '.htaccess';
-		if ( is_link( $htaccess ) ) {
-			return false;
-		}
-		if ( ! file_exists( $htaccess ) ) {
-			if ( false === @file_put_contents( $htaccess, "Order deny,allow\nDeny from all\n<IfModule mod_authz_core.c>\nRequire all denied\n</IfModule>\n", LOCK_EX ) ) {
-				return false;
-			}
-		}
-		$idx = trailingslashit( $quar_dir ) . 'index.php';
-		if ( is_link( $idx ) ) {
-			return false;
-		}
-		if ( ! file_exists( $idx ) ) {
-			if ( false === @file_put_contents( $idx, "<?php\n// Silence is golden.\n", LOCK_EX ) ) {
-				return false;
-			}
-		}
-
-		$dest_filename = bin2hex( random_bytes( 16 ) ) . '.quarantine';
-		$dest          = trailingslashit( $quar_dir ) . $dest_filename;
-
-		require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php';
-		require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-direct.php';
-		$filesystem = new WP_Filesystem_Direct( null );
-		if ( $is_backup ) {
-			$ok = $filesystem->copy( $full_path, $dest, false );
-		} else {
-			$ok = $filesystem->move( $full_path, $dest, false );
-			if ( ! $ok ) {
-				return false;
-			}
-			self::mark_as_reviewed( $relative_path );
-			GWQSH_Activity_Logger::log( 'File quarantined', "Moved {$clean_path} to quarantine storage", 'Security' );
-		}
-
-		if ( ! $ok ) {
-			return false;
-		}
-		$metadata                   = get_option( 'gwqsh_quarantine_metadata', array() );
-		$metadata[ $dest_filename ] = array(
-			'original' => $clean_path,
-			'time'     => time(),
-			'hash'     => hash_file( 'sha256', $dest ),
-			'reason'   => $is_backup ? 'restore backup' : 'scan issue',
+		$result = GWQSH_Quarantine_Manager::quarantine_file(
+			'/' . ltrim( $relative_path, '/' ),
+			$is_backup ? 'Checksum-verified restore backup' : ( $finding && $finding->severity ? ucfirst( $finding->severity ) . ' finding quarantined by administrator' : 'Suspicious file quarantined by administrator.' ),
+			$meta,
+			$is_backup
 		);
-		update_option( 'gwqsh_quarantine_metadata', $metadata, false );
+		if ( is_wp_error( $result ) ) {
+			return false;
+		}
+		if ( ! $is_backup ) {
+			self::mark_as_reviewed( $relative_path );
+		}
 		return true;
 	}
 	/**
