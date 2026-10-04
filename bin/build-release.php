@@ -38,7 +38,7 @@ function gwqsh_build_release() {
 			$files[] = $plugin . '/' . $name;
 		}
 
-		foreach ( array( 'admin', 'assets', 'includes', 'languages' ) as $folder ) {
+		foreach ( array( 'admin', 'assets', 'includes', 'languages', 'mu-plugins' ) as $folder ) {
 			$folder_path = $plugin . '/' . $folder;
 			if ( ! is_dir( $folder_path ) ) {
 				continue;
@@ -63,7 +63,7 @@ function gwqsh_build_release() {
 			throw new RuntimeException( 'Cannot create plugin dist directory.' );
 		}
 
-		$archive_path = $dist . '/' . $slug . '-1.0.0.zip';
+		$archive_path = $dist . '/' . $slug . '-1.1.0.zip';
 		$temporary    = $archive_path . '.tmp';
 		$zip          = new ZipArchive();
 

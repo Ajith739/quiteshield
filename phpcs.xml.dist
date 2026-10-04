@@ -3,6 +3,7 @@
   <description>WordPress Coding Standards for Gracewell backend PHP.</description>
   <file>gracewell-quietshield.php</file>
   <file>includes</file>
+  <file>mu-plugins</file>
   <file>uninstall.php</file>
   <file>admin/views</file>
   <arg name="extensions" value="php"/>

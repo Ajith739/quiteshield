@@ -117,6 +117,21 @@ final class GWQSH_Ajax {
 			case 'mark_reviewed':
 				self::mark_reviewed();
 				break;
+			case 'guardian_status':
+				self::guardian_status();
+				break;
+			case 'guardian_install':
+				self::guardian_install();
+				break;
+			case 'guardian_uninstall':
+				self::guardian_uninstall();
+				break;
+			case 'restore_quarantine':
+				self::restore_quarantine();
+				break;
+			case 'establish_baseline':
+				self::establish_baseline();
+				break;
 
 			// Hardening.
 			case 'get_hardening_data':
@@ -886,5 +901,90 @@ final class GWQSH_Ajax {
 	 */
 	private static function rebuild_baseline() {
 		self::run_scan();
+	}
+	/**
+	 * Early Guardian status overview.
+	 */
+	private static function guardian_status() {
+		wp_send_json_success( array( 'guardian' => GWQSH_Guardian_Manager::overview() ) );
+	}
+	/**
+	 * Install the Early Guardian must-use plugin.
+	 */
+	private static function guardian_install() {
+		check_ajax_referer( 'gwqsh_nonce', 'nonce' );
+		$result = GWQSH_Guardian_Manager::install();
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
+		}
+		wp_send_json_success(
+			array(
+				'message' => 'Early Guardian installed. It now checks must-use plugins before they load.',
+				'guardian' => GWQSH_Guardian_Manager::overview(),
+			)
+		);
+	}
+	/**
+	 * Remove the Early Guardian must-use plugin.
+	 */
+	private static function guardian_uninstall() {
+		check_ajax_referer( 'gwqsh_nonce', 'nonce' );
+		$result = GWQSH_Guardian_Manager::uninstall();
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
+		}
+		wp_send_json_success(
+			array(
+				'message' => 'Early Guardian removed.',
+				'guardian' => GWQSH_Guardian_Manager::overview(),
+			)
+		);
+	}
+	/**
+	 * Restore a quarantined file to its original location.
+	 */
+	private static function restore_quarantine() {
+		check_ajax_referer( 'gwqsh_nonce', 'nonce' );
+		$name = isset( $_POST['name'] ) ? sanitize_text_field( wp_unslash( $_POST['name'] ) ) : '';
+		if ( '' === $name ) {
+			wp_send_json_error( array( 'message' => 'Quarantine file name missing.' ) );
+		}
+		$result = GWQSH_Quarantine_Manager::restore_file( $name );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
+		}
+		wp_send_json_success(
+			array(
+				'message' => 'File restored to its original location.',
+				'guardian' => GWQSH_Guardian_Manager::overview(),
+				'summary' => GWQSH_File_Integrity::get_summary(),
+				'issues'  => GWQSH_File_Integrity::get_scan_issues(),
+			)
+		);
+	}
+	/**
+	 * Establish trusted baselines for must-use plugins and root files after a
+	 * clean scan. Refuses while unresolved Critical findings exist.
+	 */
+	private static function establish_baseline() {
+		check_ajax_referer( 'gwqsh_nonce', 'nonce' );
+		$mu   = GWQSH_Baseline_Manager::establish_mu_baseline( true );
+		$root = GWQSH_Baseline_Manager::establish_root_baseline();
+		foreach ( array( $mu, $root ) as $result ) {
+			if ( is_wp_error( $result ) ) {
+				wp_send_json_error( array( 'message' => $result->get_error_message() ), 409 );
+			}
+		}
+		GWQSH_Activity_Logger::log(
+			'Trusted baselines established',
+			'Baselines recorded for ' . (int) $mu['files'] . ' must-use plugin file(s) and ' . (int) $root['files'] . ' root file(s).',
+			'Security'
+		);
+		wp_send_json_success(
+			array(
+				'message' => 'Trusted baselines established.',
+				'guardian' => GWQSH_Guardian_Manager::overview(),
+			)
+		);
 	}
 }

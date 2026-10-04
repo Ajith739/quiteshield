@@ -1,5 +1,27 @@
 # Gracewell QuietShield security notes
 
+## Behavioral security engine (1.1.0)
+
+Detection is primarily behavioral. Files are never executed or included during analysis: the engine reads source text and a token stream (`token_get_all`) only. A shared dependency-free kernel (`includes/security/gwqsh-guardian-core.php`) provides indicator matching, the scoring model and file-reading helpers; a token-based analyzer (`class-gwqsh-php-analyzer.php`) adds precise call-site, hook, string, taint and write-target evidence; pluggable rules (`includes/security/rules/`) implement `GWQSH_Detection_Rule` and contribute explainable findings (rule ID, category, score, evidence, source lines). The scoring engine combines multi-indicator findings into one verdict per file: Informational, Low, Medium, High or Critical, with a numeric score and human-readable summary. Known incident strings are matched as supplemental evidence only and can never produce a Critical verdict on their own.
+
+Rule categories: cloaking/traffic hijacking (bot detection + redirect/remote delivery), remote payload loading, TLS verification bypass, self-healing persistence (critical-file writes + hidden backups + chmod locks), critical file writes, web shells (request input reaching process execution or dynamic includes), obfuscation, dynamic includes, front-end injection (iframes/scripts/hidden content), uploads executables (double extensions, polyglots, server config files), must-use persistence, and supplemental signatures. `.htaccess` and `wp-config.php` are audited for cloaking redirects, execution re-enabling, injected includes and encoded payloads; QuietShield's own managed .htaccess block is excluded from those audits.
+
+Scopes: core checksums (official WordPress.org checksums with graceful offline degradation), must-use plugins (with SHA-256 baselines), plugins, themes, uploads, and the webroot (root-file baselines, unexpected root executables). All filesystem access goes through a strict path guard (traversal, null bytes, stream wrappers, absolute-path injection and symlink escape rejection; all operations confined to validated WordPress roots).
+
+## Early Guardian
+
+The optional Gracewell Early Guardian (`mu-plugins/000-gracewell-guardian.php`, deployed on demand from File Integrity → Actions & Tools) loads before normal must-use plugins. On each request it performs cheap directory and per-file mtime/size comparisons and only hashes/analyzes new or changed files - there is no full scan per request. A probabilistic full re-verification (on average ~1 in 40 requests, or after 6 hours) covers timestamp manipulation. The Guardian quarantines only on extremely-high-confidence behavioral matches: the cloaking/traffic-hijack combination, the self-healing persistence combination, or request input reaching process execution. Everything else (including ordinary new must-use plugins) is recorded as a review event. Quarantine moves the file to the same execution-blocked storage the main plugin uses, records full provenance, files a Critical scan finding, and writes an activity-log entry; WordPress continues to boot. Any Guardian-internal failure is caught and logged without stopping the site.
+
+Documented limitations: an attacker with full filesystem access can delete or corrupt the Guardian file itself (a broken must-use file fatals WordPress - verify this file after incidents), manipulate timestamps/sizes to evade change detection, or write persistence outside the must-use directory (the main scanner covers those locations during manual scans). The Guardian does not load the main plugin and degrades to baseline/indicator checks when the plugin directory is absent.
+
+## Baselines and false positives
+
+Trusted SHA-256 baselines exist for must-use plugins and important root files. Baselines are never established while unresolved Critical findings exist. Baseline-trusted files never raise findings; modified ones are surfaced for administrator review. The engine reduces false positives through multi-indicator combination scoring, within-category diminishing returns, contextual calibration (standalone weak signals stay Low; a plugin legitimately editing one file it owns is reviewed rather than quarantined) and content-hash caching. New must-use plugins with ordinary behavior (hooks, options, standard API use) are reported for review only.
+
+## Quarantine and restore
+
+Quarantine never deletes files. Content is moved (or copied for checksum-verified restore backups) into a per-site random-named directory with Apache deny rules and an index guard; names are unpredictable (`32 hex .quarantine`). Metadata records the original path, SHA-256, timestamp, reason, detection source, severity, rule ID and risk score. Restores are administrator-only (capability + nonce), refuse occupied targets, verify hashes, and are confined to validated roots. The Early Guardian and the main plugin share the same storage and metadata format.
+
 ## Custom login recovery
 
 Save the private recovery URL displayed in Login Protection before enabling a custom login URL. It grants temporary access to the normal WordPress login form and does not bypass a password or two-factor authentication. Changing the custom login URL rotates the recovery link. An administrator with server access can define `GWQSH_DISABLE_LOGIN_URL` as `true` in `wp-config.php` if the custom route stops working.
